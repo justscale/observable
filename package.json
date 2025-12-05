@@ -1,6 +1,6 @@
 {
   "name": "@justscale/observable",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Proxy-based observable system with dirty tracking for TypeScript",
   "keywords": [
     "observable",
