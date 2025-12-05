@@ -1,17 +1,69 @@
 # @justscale/observable
 
-A proxy-based observable system with dirty tracking for TypeScript.
+[![npm version](https://img.shields.io/npm/v/@justscale/observable.svg)](https://www.npmjs.com/package/@justscale/observable)
+[![CI](https://github.com/justscale/observable/actions/workflows/ci.yml/badge.svg)](https://github.com/justscale/observable/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+Proxy-based observable system with dirty tracking for TypeScript.
+
+## Installation
+
+```bash
+npm install @justscale/observable zod
+```
+
+## Quick Start
+
+```typescript
+import { z } from "zod";
+import { createModel, getModelInternals, watch } from "@justscale/observable";
+
+// Define a schema
+const schema = z.object({
+  user: z.object({
+    name: z.string().default(""),
+    score: z.number().default(0),
+  }),
+});
+
+// Create a model
+const model = createModel(schema, { user: { name: "Alice" } });
+
+// Watch for changes
+watch(model, (paths) => console.log("Changed:", paths));
+
+// Mutate - watchers are notified automatically
+model.user.score = 100;
+// logs: Changed: ["user.score", "user"]
+
+// Check dirty state
+const internals = getModelInternals(model);
+internals.getDirtyPaths(); // ["user.score", "user"]
+internals.markClean();
+```
+
+## Requirements
+
+| Environment | Minimum Version |
+|-------------|-----------------|
+| Node.js     | 14.6+           |
+| Chrome      | 84+             |
+| Firefox     | 79+             |
+| Safari      | 14.1+           |
+| Edge        | 84+             |
+
+Uses `WeakRef` for parent tracking. `structuredClone` is used when available (Node 17+) with automatic fallback.
 
 ## Features
 
 - **Dirty tracking** - Know exactly which paths changed
 - **Deep nesting** - Track changes at any depth with full parent paths
 - **Shared references** - Same object in multiple locations tracks all paths
-- **Cross-model sharing** - Share observables between models with independent dirty sets
-- **Watch API** - Callback or async generator for change notifications
+- **Watch API** - Callback or async generator (`for await`) for change notifications
 - **Built-in support** - Map, Set, Date, TypedArray, DataView all work
+- **Zod integration** - Schema validation with full type inference
 
-## Usage
+## API
 
 ### Models (with Zod schema)
 
@@ -20,22 +72,16 @@ import { z } from "zod";
 import { createModel, getModelInternals } from "@justscale/observable";
 
 const schema = z.object({
-  user: z.object({
-    name: z.string().default(""),
-    score: z.number().default(0),
-  }),
   tags: z.array(z.string()).default([]),
 });
 
-const model = createModel(schema, { user: { name: "Alice" } });
+const model = createModel(schema, {});
 const internals = getModelInternals(model);
 
-model.user.score = 100;
 model.tags.push("active");
 
-internals.getDirtyPaths();
-// ["user.score", "user", "tags.0", "tags"]
-
+internals.getDirtyPaths(); // ["tags.0", "tags"]
+internals.isDirty();       // true
 internals.markClean();
 ```
 
@@ -53,7 +99,7 @@ obs.items.push("item");
 internals.getDirtyPaths(); // ["count", "items.0", "items"]
 ```
 
-### Watching for changes
+### Watch API
 
 ```typescript
 import { watch } from "@justscale/observable";
@@ -64,15 +110,23 @@ const handle = watch(model, (paths) => {
 });
 handle.unsubscribe();
 
-// Async generator mode
-const watcher = watch(model);
-for await (const paths of watcher) {
+// Async generator - for await
+const watcher1 = watch(model);
+for await (const paths of watcher1) {
   console.log("Changed:", paths);
-  if (done) watcher.unsubscribe();
+  if (shouldStop) watcher1.unsubscribe();
 }
+
+// Async generator - manual .next()
+const watcher2 = watch(model);
+const { value, done } = await watcher2.next();
+if (!done) {
+  console.log("Changed:", value);
+}
+watcher2.unsubscribe();
 ```
 
-### Shared references
+### Shared References
 
 ```typescript
 const shared = createObservable({ value: 1 });
@@ -88,7 +142,7 @@ getModelInternals(model1).getDirtyPaths(); // ["foo.value", "foo"]
 getModelInternals(model2).getDirtyPaths(); // ["bar.value", "bar"]
 ```
 
-### Built-in objects
+### Built-in Objects
 
 ```typescript
 const obs = createObservable({
@@ -97,12 +151,12 @@ const obs = createObservable({
   updated: new Date(),
 });
 
-obs.cache.set("key", "value");  // Tracks dirty: ["cache"]
-obs.tags.add("new");            // Tracks dirty: ["tags"]
-obs.updated.setFullYear(2025);  // Tracks dirty: ["updated"]
+obs.cache.set("key", "value");  // Tracks: ["cache"]
+obs.tags.add("new");            // Tracks: ["tags"]
+obs.updated.setFullYear(2025);  // Tracks: ["updated"]
 ```
 
-## Dirty Path Behavior
+## Dirty Path Reference
 
 | Operation | Dirty Paths |
 |-----------|-------------|
@@ -115,87 +169,19 @@ obs.updated.setFullYear(2025);  // Tracks dirty: ["updated"]
 | `set.add(x)` | `["set"]` |
 | `date.setFullYear(x)` | `["date"]` |
 
-## Known Limitations
+## Limitations
 
-### 1. Private Fields
+### Private Fields
 
-Classes with private fields (`#field`) throw TypeError:
+Classes with private fields (`#field`) throw TypeError - methods are bound to the proxy which breaks private field access.
 
-```typescript
-class Secret {
-  #hidden = "secret";
-  getHidden() { return this.#hidden; }
-}
+### Frozen/Sealed Objects
 
-const obs = createObservable(new Secret());
-obs.getHidden(); // TypeError!
-```
+Cannot observe frozen or sealed objects - we need to attach a symbol property for internals.
 
-**Why:** Methods are bound to the proxy to enable dirty tracking on `this.foo = x`. Private fields require `this` to be the exact instance.
+### Built-in Granularity
 
-### 2. Frozen/Sealed Objects
-
-Cannot observe frozen or sealed objects:
-
-```typescript
-const frozen = Object.freeze({ value: 1 });
-createObservable(frozen); // TypeError!
-
-const sealed = Object.seal({ value: 1 });
-createObservable(sealed); // TypeError!
-```
-
-**Why:** We need to attach a symbol property for internals access.
-
-**Workaround:** Create observable first, then freeze if needed (writes will fail as expected).
-
-### 3. Circular References
-
-Circular references are handled correctly - no infinite loops:
-
-```typescript
-const obj = { self: null };
-obj.self = obj;
-
-const obs = createObservable(obj); // Works fine
-obs.self.self.self; // Works fine
-```
-
-### 4. Built-in Internal Mutations
-
-Built-in mutations track the container, not individual keys:
-
-```typescript
-obs.map.set("key", "value");
-// Dirty: ["map"] - not ["map.key"]
-```
-
-**Why:** We can't intercept internal slot mutations granularly.
-
-## Architecture
-
-```
-createModel/createObservable
-         │
-         ▼
-  createTrackedProxy (recursive)
-         │
-         ├── ProxyMeta (per object)
-         │   ├── path: string[]
-         │   ├── dirtySets: Set<Set<string>>
-         │   ├── parents: Set<{ref: WeakRef, key}>
-         │   └── children: Map<key, ProxyMeta>
-         │
-         └── Proxy handlers
-             ├── get: wrap nested objects, bind methods
-             └── set/delete: mark dirty with parents
-```
-
-## Installation
-
-```bash
-pnpm add @justscale/observable zod
-```
+Built-in mutations (Map, Set, Date) track the container, not individual keys - we can't intercept internal slot mutations granularly.
 
 ## License
 

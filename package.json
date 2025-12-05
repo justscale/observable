@@ -36,6 +36,7 @@
       "import": "./dist/index.js"
     }
   },
+  "sideEffects": false,
   "files": [
     "dist",
     "README.md"
@@ -43,9 +44,11 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "tsx --test test/**/*.test.ts",
+    "test:coverage": "tsx --test --experimental-test-coverage test/**/*.test.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
+    "pack:check": "pnpm pack && rm -f justscale-observable-*.tgz && test -f dist/index.js && test -f dist/index.d.ts && echo 'Package contents verified'",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
@@ -57,5 +60,14 @@
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   },
+  "engines": {
+    "node": ">=14.6.0"
+  },
+  "browserslist": [
+    "Chrome >= 84",
+    "Firefox >= 79",
+    "Safari >= 14.1",
+    "Edge >= 84"
+  ],
   "packageManager": "pnpm@10.24.0"
 }
