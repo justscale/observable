@@ -60,9 +60,10 @@ export interface WatchAsyncIteratorOptions {
   coalesce?: boolean;
 }
 
-export type Watcher = AsyncGenerator<string[], void, unknown> & {
-  unsubscribe: () => void;
-};
+export type Watcher = AsyncGenerator<string[], void, unknown> &
+  Disposable & {
+    unsubscribe: () => void;
+  };
 
 /**
  * Watch an observable or model for changes.
@@ -161,6 +162,15 @@ export function watch<T extends object>(
 
     [Symbol.asyncIterator]() {
       return this;
+    },
+
+    [Symbol.dispose]() {
+      doUnsubscribe();
+    },
+
+    [Symbol.asyncDispose]() {
+      doUnsubscribe();
+      return Promise.resolve();
     },
   };
 
