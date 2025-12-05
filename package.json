@@ -44,7 +44,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "tsx --test test/**/*.test.ts",
-    "test:coverage": "tsx --test --experimental-test-coverage test/**/*.test.ts",
+    "test:coverage": "tsx --test --experimental-test-coverage --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=coverage/lcov.info test/**/*.test.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
