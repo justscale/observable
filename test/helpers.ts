@@ -9,6 +9,7 @@ export function assertExactPaths(actual: string[], expected: string[], message?:
   assert.deepStrictEqual(
     sortedActual,
     sortedExpected,
-    message ?? `Expected paths ${JSON.stringify(sortedExpected)}, got ${JSON.stringify(sortedActual)}`
+    message ??
+      `Expected paths ${JSON.stringify(sortedExpected)}, got ${JSON.stringify(sortedActual)}`,
   );
 }

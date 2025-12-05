@@ -1,7 +1,12 @@
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
+import {
+  createModel,
+  createObservable,
+  getModelInternals,
+  getObservableInternals,
+} from "@justscale/observable";
 import { z } from "zod";
-import { createModel, getModelInternals, createObservable, getObservableInternals } from "@justscale/observable";
 import { assertExactPaths } from "./helpers.js";
 
 describe("createObservable", () => {
@@ -115,8 +120,14 @@ describe("createObservable", () => {
       const paths1 = internals1.getDirtyPaths();
       const paths2 = internals2.getDirtyPaths();
 
-      assert.ok(paths1.some(p => p.startsWith("foo")), `Expected "foo" path, got: ${paths1}`);
-      assert.ok(paths2.some(p => p.startsWith("bar")), `Expected "bar" path, got: ${paths2}`);
+      assert.ok(
+        paths1.some((p) => p.startsWith("foo")),
+        `Expected "foo" path, got: ${paths1}`,
+      );
+      assert.ok(
+        paths2.some((p) => p.startsWith("bar")),
+        `Expected "bar" path, got: ${paths2}`,
+      );
     });
   });
 });

@@ -1,7 +1,13 @@
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
+import {
+  createModel,
+  createObservable,
+  getModelInternals,
+  getObservableInternals,
+  watch,
+} from "@justscale/observable";
 import { z } from "zod";
-import { createModel, getModelInternals, createObservable, getObservableInternals, watch } from "@justscale/observable";
 import { assertExactPaths } from "./helpers.js";
 
 describe("edge cases", () => {
@@ -318,7 +324,7 @@ describe("edge cases", () => {
       const internals = getModelInternals(model);
 
       let callCount = 0;
-      watch(model, (paths) => {
+      watch(model, (_paths) => {
         callCount++;
         internals.markClean(); // Clear during callback
       });
@@ -387,7 +393,7 @@ describe("edge cases", () => {
         b: z.number().default(0),
       });
       const model = createModel(schema, {});
-      const internals = getModelInternals(model);
+      const _internals = getModelInternals(model);
 
       const receivedPaths: string[][] = [];
 
@@ -757,11 +763,21 @@ describe("edge cases", () => {
     });
 
     it("should handle Map iteration methods", () => {
-      const obs = createObservable({ map: new Map([["a", 1], ["b", 2], ["c", 3]]) });
+      const obs = createObservable({
+        map: new Map([
+          ["a", 1],
+          ["b", 2],
+          ["c", 3],
+        ]),
+      });
 
       // entries()
       const entries = [...obs.map.entries()];
-      assert.deepStrictEqual(entries, [["a", 1], ["b", 2], ["c", 3]]);
+      assert.deepStrictEqual(entries, [
+        ["a", 1],
+        ["b", 2],
+        ["c", 3],
+      ]);
 
       // keys()
       const keys = [...obs.map.keys()];
@@ -776,14 +792,22 @@ describe("edge cases", () => {
       obs.map.forEach((value, key) => {
         forEachResults.push([key, value]);
       });
-      assert.deepStrictEqual(forEachResults, [["a", 1], ["b", 2], ["c", 3]]);
+      assert.deepStrictEqual(forEachResults, [
+        ["a", 1],
+        ["b", 2],
+        ["c", 3],
+      ]);
 
       // for...of iteration (uses Symbol.iterator -> entries)
       const iterResults: [string, number][] = [];
       for (const [key, value] of obs.map) {
         iterResults.push([key, value]);
       }
-      assert.deepStrictEqual(iterResults, [["a", 1], ["b", 2], ["c", 3]]);
+      assert.deepStrictEqual(iterResults, [
+        ["a", 1],
+        ["b", 2],
+        ["c", 3],
+      ]);
     });
 
     it("should handle Set iteration methods", () => {
@@ -799,7 +823,11 @@ describe("edge cases", () => {
 
       // entries() - [value, value] pairs for Set
       const entries = [...obs.set.entries()];
-      assert.deepStrictEqual(entries, [[1, 1], [2, 2], [3, 3]]);
+      assert.deepStrictEqual(entries, [
+        [1, 1],
+        [2, 2],
+        [3, 3],
+      ]);
 
       // forEach
       const forEachResults: number[] = [];
@@ -916,13 +944,13 @@ describe("edge cases", () => {
       const sliced = obs.arr.slice(1, 3);
       assert.deepStrictEqual([...sliced], [2, 3]);
 
-      const mapped = obs.arr.map(x => x * 2);
+      const mapped = obs.arr.map((x) => x * 2);
       assert.deepStrictEqual([...mapped], [2, 4, 6, 8, 10]);
 
-      const filtered = obs.arr.filter(x => x > 2);
+      const filtered = obs.arr.filter((x) => x > 2);
       assert.deepStrictEqual([...filtered], [3, 4, 5]);
 
-      const found = obs.arr.find(x => x > 3);
+      const found = obs.arr.find((x) => x > 3);
       assert.strictEqual(found, 4);
 
       const index = obs.arr.indexOf(3);
@@ -975,11 +1003,11 @@ describe("edge cases", () => {
 
       // Write some data first (through the view)
       obs.view.setInt32(0, 42);
-      obs.view.setFloat64(4, 3.14159);
+      obs.view.setFloat64(4, Math.PI);
 
       // Read it back
       assert.strictEqual(obs.view.getInt32(0), 42);
-      assert.strictEqual(obs.view.getFloat64(4), 3.14159);
+      assert.strictEqual(obs.view.getFloat64(4), Math.PI);
 
       // Properties
       assert.strictEqual(obs.view.byteLength, 16);
@@ -1019,7 +1047,7 @@ describe("edge cases", () => {
       assertExactPaths(internals.getDirtyPaths(), ["view"]);
 
       internals.markClean();
-      obs.view.setFloat64(24, 3.141592653589793);
+      obs.view.setFloat64(24, Math.PI);
       assertExactPaths(internals.getDirtyPaths(), ["view"]);
 
       internals.markClean();
@@ -1233,10 +1261,7 @@ describe("edge cases", () => {
       obs.path1.map.set("new", "entry");
 
       // Both paths should be dirty
-      assertExactPaths(internals.getDirtyPaths(), [
-        "path1.map", "path1",
-        "path2.map", "path2",
-      ]);
+      assertExactPaths(internals.getDirtyPaths(), ["path1.map", "path1", "path2.map", "path2"]);
     });
   });
 
@@ -1248,7 +1273,10 @@ describe("edge cases", () => {
 
     it("should work with Object.entries", () => {
       const obs = createObservable({ x: 10, y: 20 });
-      assert.deepStrictEqual(Object.entries(obs), [["x", 10], ["y", 20]]);
+      assert.deepStrictEqual(Object.entries(obs), [
+        ["x", 10],
+        ["y", 20],
+      ]);
     });
 
     it("should work with Object.values", () => {
@@ -1336,11 +1364,26 @@ describe("edge cases", () => {
     it("should work with array methods that return new arrays", () => {
       const obs = createObservable({ items: [1, 2, 3, 4, 5] });
 
-      assert.deepStrictEqual(obs.items.map(x => x * 2), [2, 4, 6, 8, 10]);
-      assert.deepStrictEqual(obs.items.filter(x => x > 2), [3, 4, 5]);
-      assert.strictEqual(obs.items.reduce((a, b) => a + b, 0), 15);
-      assert.strictEqual(obs.items.find(x => x > 3), 4);
-      assert.strictEqual(obs.items.findIndex(x => x > 3), 3);
+      assert.deepStrictEqual(
+        obs.items.map((x) => x * 2),
+        [2, 4, 6, 8, 10],
+      );
+      assert.deepStrictEqual(
+        obs.items.filter((x) => x > 2),
+        [3, 4, 5],
+      );
+      assert.strictEqual(
+        obs.items.reduce((a, b) => a + b, 0),
+        15,
+      );
+      assert.strictEqual(
+        obs.items.find((x) => x > 3),
+        4,
+      );
+      assert.strictEqual(
+        obs.items.findIndex((x) => x > 3),
+        3,
+      );
       assert.strictEqual(obs.items.includes(3), true);
       assert.strictEqual(obs.items.indexOf(3), 2);
       assert.deepStrictEqual(obs.items.slice(1, 3), [2, 3]);
@@ -1350,7 +1393,7 @@ describe("edge cases", () => {
       const obs = createObservable({ exists: true });
       assert.strictEqual(Object.hasOwn(obs, "exists"), true);
       assert.strictEqual(Object.hasOwn(obs, "missing"), false);
-      assert.strictEqual(obs.hasOwnProperty("exists"), true);
+      assert.strictEqual(Object.hasOwn(obs, "exists"), true);
     });
 
     it("should work with Object.isExtensible", () => {
@@ -1435,7 +1478,7 @@ describe("edge cases", () => {
       // Writing should fail
       try {
         (obs as any).value = 100;
-      } catch (e) {
+      } catch (_e) {
         // Expected in strict mode
       }
 
@@ -1568,14 +1611,9 @@ describe("edge cases", () => {
         // These are string keys, not array indices
         (model.data as any)["123"] = "value1";
         (model.data as any)["0123"] = "value2"; // Leading zero
-        (model.data as any)["1.5"] = "value3";  // Float
+        (model.data as any)["1.5"] = "value3"; // Float
 
-        assertExactPaths(internals.getDirtyPaths(), [
-          "data.123",
-          "data.0123",
-          "data.1.5",
-          "data",
-        ]);
+        assertExactPaths(internals.getDirtyPaths(), ["data.123", "data.0123", "data.1.5", "data"]);
       });
     });
 
@@ -1630,7 +1668,10 @@ describe("edge cases", () => {
 
         // Symbol keys should be tracked with Symbol(test) in path
         const paths = internals.getDirtyPaths();
-        assert.strictEqual(paths.some(p => p.includes("Symbol(test)")), true);
+        assert.strictEqual(
+          paths.some((p) => p.includes("Symbol(test)")),
+          true,
+        );
         assert.strictEqual((model.data as any)[sym], "symbol-value");
       });
 
@@ -1708,12 +1749,8 @@ describe("edge cases", () => {
         (model.data as any)[Infinity] = "infinite";
         (model.data as any)[-Infinity] = "negative-infinite";
 
-        assertExactPaths(internals.getDirtyPaths(), [
-          "data.Infinity",
-          "data.-Infinity",
-          "data",
-        ]);
-        assert.strictEqual((model.data as any)["Infinity"], "infinite");
+        assertExactPaths(internals.getDirtyPaths(), ["data.Infinity", "data.-Infinity", "data"]);
+        assert.strictEqual((model.data as any).Infinity, "infinite");
         assert.strictEqual((model.data as any)["-Infinity"], "negative-infinite");
       });
 
@@ -1728,7 +1765,7 @@ describe("edge cases", () => {
         (model.data as any)[NaN] = "not-a-number";
 
         assertExactPaths(internals.getDirtyPaths(), ["data.NaN", "data"]);
-        assert.strictEqual((model.data as any)["NaN"], "not-a-number");
+        assert.strictEqual((model.data as any).NaN, "not-a-number");
       });
     });
 
@@ -1741,11 +1778,11 @@ describe("edge cases", () => {
         const internals = getModelInternals(model);
 
         // Set __proto__ as a regular property (doesn't affect prototype)
-        (model.data as any)["__proto__"] = { malicious: true };
+        (model.data as any).__proto__ = { malicious: true };
 
         assertExactPaths(internals.getDirtyPaths(), ["data.__proto__", "data"]);
         // Should be stored as regular property, not affecting prototype
-        assert.strictEqual((model.data as any)["__proto__"].malicious, true);
+        assert.strictEqual((model.data as any).__proto__.malicious, true);
       });
 
       it("should handle constructor as a regular property key", () => {
@@ -1755,7 +1792,7 @@ describe("edge cases", () => {
         const model = createModel(schema, { data: {} });
         const internals = getModelInternals(model);
 
-        (model.data as any)["constructor"] = "overwritten";
+        (model.data as any).constructor = "overwritten";
 
         assertExactPaths(internals.getDirtyPaths(), ["data.constructor", "data"]);
       });
@@ -1767,10 +1804,10 @@ describe("edge cases", () => {
         const model = createModel(schema, { data: {} });
         const internals = getModelInternals(model);
 
-        (model.data as any)["prototype"] = "test";
+        (model.data as any).prototype = "test";
 
         assertExactPaths(internals.getDirtyPaths(), ["data.prototype", "data"]);
-        assert.strictEqual((model.data as any)["prototype"], "test");
+        assert.strictEqual((model.data as any).prototype, "test");
       });
     });
 
@@ -1799,12 +1836,7 @@ describe("edge cases", () => {
         (model.data as any)["\t"] = "tab";
         (model.data as any)["\n"] = "newline";
 
-        assertExactPaths(internals.getDirtyPaths(), [
-          "data. ",
-          "data.\t",
-          "data.\n",
-          "data",
-        ]);
+        assertExactPaths(internals.getDirtyPaths(), ["data. ", "data.\t", "data.\n", "data"]);
       });
     });
 
@@ -1817,15 +1849,10 @@ describe("edge cases", () => {
         const internals = getModelInternals(model);
 
         (model.data as any)["🚀"] = "rocket";
-        (model.data as any)["你好"] = "hello";
-        (model.data as any)["مرحبا"] = "hello-arabic";
+        (model.data as any).你好 = "hello";
+        (model.data as any).مرحبا = "hello-arabic";
 
-        assertExactPaths(internals.getDirtyPaths(), [
-          "data.🚀",
-          "data.你好",
-          "data.مرحبا",
-          "data",
-        ]);
+        assertExactPaths(internals.getDirtyPaths(), ["data.🚀", "data.你好", "data.مرحبا", "data"]);
         assert.strictEqual((model.data as any)["🚀"], "rocket");
       });
 

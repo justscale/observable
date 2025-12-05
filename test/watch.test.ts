@@ -1,8 +1,7 @@
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
+import { createModel, createObservable, watch } from "@justscale/observable";
 import { z } from "zod";
-import { createModel, getModelInternals, createObservable, getObservableInternals, watch } from "@justscale/observable";
-import { assertExactPaths } from "./helpers.js";
 
 describe("watch", () => {
   describe("callback-based watching", () => {
@@ -86,9 +85,11 @@ describe("watch", () => {
 
     it("should watch nested changes", () => {
       const schema = z.object({
-        user: z.object({
-          name: z.string().default(""),
-        }).default(() => ({ name: "" })),
+        user: z
+          .object({
+            name: z.string().default(""),
+          })
+          .default(() => ({ name: "" })),
       });
       const model = createModel(schema, {});
 
@@ -100,7 +101,7 @@ describe("watch", () => {
       model.user.name = "Alice";
 
       assert.strictEqual(calls.length, 1);
-      assert.ok(calls[0].some(p => p.includes("user")));
+      assert.ok(calls[0].some((p) => p.includes("user")));
     });
   });
 
@@ -216,7 +217,7 @@ describe("watch", () => {
 
       // Make changes
       model.count = 1;
-      await new Promise(r => setTimeout(r, 5));
+      await new Promise((r) => setTimeout(r, 5));
       model.count = 2;
 
       await iterPromise;
@@ -246,9 +247,13 @@ describe("watch", () => {
       });
 
       // Give it some time to potentially resolve (it shouldn't)
-      await new Promise(r => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, 50));
 
-      assert.strictEqual(secondResolved, false, "Second next() should not resolve without a change");
+      assert.strictEqual(
+        secondResolved,
+        false,
+        "Second next() should not resolve without a change",
+      );
 
       // Now make another change - it should resolve
       model.count = 2;
@@ -286,8 +291,8 @@ describe("watch", () => {
       assert.strictEqual(calls2.length, 1);
 
       // With their respective paths
-      assert.ok(calls1[0].some(p => p.startsWith("foo")));
-      assert.ok(calls2[0].some(p => p.startsWith("bar")));
+      assert.ok(calls1[0].some((p) => p.startsWith("foo")));
+      assert.ok(calls2[0].some((p) => p.startsWith("bar")));
     });
   });
 });

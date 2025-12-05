@@ -1,7 +1,12 @@
-import { describe, it } from "node:test";
 import assert from "node:assert";
+import { describe, it } from "node:test";
+import {
+  createModel,
+  createObservable,
+  getModelInternals,
+  getObservableInternals,
+} from "@justscale/observable";
 import { z } from "zod";
-import { createModel, getModelInternals, createObservable, getObservableInternals } from "@justscale/observable";
 import { assertExactPaths } from "./helpers.js";
 
 describe("createModel", () => {
@@ -79,10 +84,12 @@ describe("createModel", () => {
   describe("dirty tracking - nested objects", () => {
     it("should track nested property changes with parent paths", () => {
       const schema = z.object({
-        user: z.object({
-          name: z.string().default(""),
-          age: z.number().default(0),
-        }).default(() => ({ name: "", age: 0 })),
+        user: z
+          .object({
+            name: z.string().default(""),
+            age: z.number().default(0),
+          })
+          .default(() => ({ name: "", age: 0 })),
       });
       const model = createModel(schema, {});
       const internals = getModelInternals(model);
@@ -112,9 +119,11 @@ describe("createModel", () => {
 
     it("should handle replacing entire nested object", () => {
       const schema = z.object({
-        user: z.object({
-          name: z.string().default(""),
-        }).default(() => ({ name: "" })),
+        user: z
+          .object({
+            name: z.string().default(""),
+          })
+          .default(() => ({ name: "" })),
       });
       const model = createModel(schema, {});
       const internals = getModelInternals(model);
@@ -159,9 +168,13 @@ describe("createModel", () => {
 
     it("should track array of objects with nested paths", () => {
       const schema = z.object({
-        users: z.array(z.object({
-          name: z.string(),
-        })).default([{ name: "Alice" }]),
+        users: z
+          .array(
+            z.object({
+              name: z.string(),
+            }),
+          )
+          .default([{ name: "Alice" }]),
       });
       const model = createModel(schema, {});
       const internals = getModelInternals(model);
@@ -198,7 +211,13 @@ describe("createModel", () => {
       assert.strictEqual(shifted, 1);
       assert.strictEqual(model.items.length, 2);
       // shift moves all elements and changes length
-      assertExactPaths(internals.getDirtyPaths(), ["items.0", "items.1", "items.2", "items.length", "items"]);
+      assertExactPaths(internals.getDirtyPaths(), [
+        "items.0",
+        "items.1",
+        "items.2",
+        "items.length",
+        "items",
+      ]);
     });
 
     it("should track array unshift with all shifted indices", () => {
@@ -228,7 +247,14 @@ describe("createModel", () => {
       assert.deepStrictEqual(removed, [2, 3]);
       assert.deepStrictEqual([...model.items], [1, 10, 20, 30, 4, 5]);
       // splice modifies indices 1-5 and length
-      assertExactPaths(internals.getDirtyPaths(), ["items.1", "items.2", "items.3", "items.4", "items.5", "items"]);
+      assertExactPaths(internals.getDirtyPaths(), [
+        "items.1",
+        "items.2",
+        "items.3",
+        "items.4",
+        "items.5",
+        "items",
+      ]);
     });
 
     it("should track array sort with swapped indices", () => {
@@ -261,9 +287,13 @@ describe("createModel", () => {
 
     it("should track pushing objects and subsequent mutation", () => {
       const schema = z.object({
-        users: z.array(z.object({
-          name: z.string(),
-        })).default([]),
+        users: z
+          .array(
+            z.object({
+              name: z.string(),
+            }),
+          )
+          .default([]),
       });
       const model = createModel(schema, {});
       const internals = getModelInternals(model);
@@ -300,7 +330,10 @@ describe("createModel", () => {
 
     it("should handle nested arrays with full path", () => {
       const schema = z.object({
-        matrix: z.array(z.array(z.number())).default([[1, 2], [3, 4]]),
+        matrix: z.array(z.array(z.number())).default([
+          [1, 2],
+          [3, 4],
+        ]),
       });
       const model = createModel(schema, {});
       const internals = getModelInternals(model);
@@ -361,10 +394,12 @@ describe("createModel", () => {
 
     it("should include entire nested object when child changes", () => {
       const schema = z.object({
-        user: z.object({
-          name: z.string().default(""),
-          age: z.number().default(0),
-        }).default(() => ({ name: "", age: 0 })),
+        user: z
+          .object({
+            name: z.string().default(""),
+            age: z.number().default(0),
+          })
+          .default(() => ({ name: "", age: 0 })),
       });
       const model = createModel(schema, {});
       const internals = getModelInternals(model);
@@ -379,9 +414,11 @@ describe("createModel", () => {
   describe("proxy stability", () => {
     it("should return same proxy for repeated access", () => {
       const schema = z.object({
-        user: z.object({
-          name: z.string().default(""),
-        }).default(() => ({ name: "" })),
+        user: z
+          .object({
+            name: z.string().default(""),
+          })
+          .default(() => ({ name: "" })),
       });
       const model = createModel(schema, {});
 
@@ -477,8 +514,14 @@ describe("createModel", () => {
 
       // Both paths should be dirty with full parent chain
       assertExactPaths(internals.getDirtyPaths(), [
-        "foo.bar.deep.value", "foo.bar.deep", "foo.bar", "foo",
-        "baz.qux.deep.value", "baz.qux.deep", "baz.qux", "baz",
+        "foo.bar.deep.value",
+        "foo.bar.deep",
+        "foo.bar",
+        "foo",
+        "baz.qux.deep.value",
+        "baz.qux.deep",
+        "baz.qux",
+        "baz",
       ]);
     });
 
@@ -512,7 +555,11 @@ describe("createModel", () => {
       assertExactPaths(internalsA.getDirtyPaths(), ["user.profile.name", "user.profile", "user"]);
 
       // ModelB should have its own paths (not modelA's paths!)
-      assertExactPaths(internalsB.getDirtyPaths(), ["settings.data.name", "settings.data", "settings"]);
+      assertExactPaths(internalsB.getDirtyPaths(), [
+        "settings.data.name",
+        "settings.data",
+        "settings",
+      ]);
 
       // Both should see the value change
       assert.strictEqual((modelA.user.profile as { name: string }).name, "Bob");
@@ -571,8 +618,12 @@ describe("createModel", () => {
 
       // Both paths should be dirty
       assertExactPaths(internals.getDirtyPaths(), [
-        "left.child.value", "left.child", "left",
-        "right.child.value", "right.child", "right",
+        "left.child.value",
+        "left.child",
+        "left",
+        "right.child.value",
+        "right.child",
+        "right",
       ]);
     });
 
@@ -589,11 +640,7 @@ describe("createModel", () => {
 
       (model.b as { x: number }).x = 42;
 
-      assertExactPaths(internals.getDirtyPaths(), [
-        "a.x", "a",
-        "b.x", "b",
-        "c.x", "c",
-      ]);
+      assertExactPaths(internals.getDirtyPaths(), ["a.x", "a", "b.x", "b", "c.x", "c"]);
     });
 
     it("should handle deeply nested diamond - 5 levels deep", () => {
@@ -661,10 +708,7 @@ describe("createModel", () => {
       (model.list1 as number[]).push(4);
 
       // Both list paths should show the new index
-      assertExactPaths(internals.getDirtyPaths(), [
-        "list1.3", "list1",
-        "list2.3", "list2",
-      ]);
+      assertExactPaths(internals.getDirtyPaths(), ["list1.3", "list1", "list2.3", "list2"]);
     });
 
     it("should handle nested shared objects - shared within shared", () => {
@@ -683,8 +727,12 @@ describe("createModel", () => {
       (model.x as { inner: { innerValue: number } }).inner.innerValue = 99;
 
       assertExactPaths(internals.getDirtyPaths(), [
-        "x.inner.innerValue", "x.inner", "x",
-        "y.inner.innerValue", "y.inner", "y",
+        "x.inner.innerValue",
+        "x.inner",
+        "x",
+        "y.inner.innerValue",
+        "y.inner",
+        "y",
       ]);
     });
 
@@ -711,26 +759,43 @@ describe("createModel", () => {
       const internals3 = getModelInternals(model3);
 
       // Modify through model2's path
-      (model2.b.info as { level1: { level2: { level3: { value: number } } } }).level1.level2.level3.value = 42;
+      (
+        model2.b.info as { level1: { level2: { level3: { value: number } } } }
+      ).level1.level2.level3.value = 42;
 
       // All should see their respective paths dirty
       assertExactPaths(sharedInternals.getDirtyPaths(), [
-        "level1.level2.level3.value", "level1.level2.level3", "level1.level2", "level1",
+        "level1.level2.level3.value",
+        "level1.level2.level3",
+        "level1.level2",
+        "level1",
       ]);
 
       assertExactPaths(internals1.getDirtyPaths(), [
-        "a.data.level1.level2.level3.value", "a.data.level1.level2.level3",
-        "a.data.level1.level2", "a.data.level1", "a.data", "a",
+        "a.data.level1.level2.level3.value",
+        "a.data.level1.level2.level3",
+        "a.data.level1.level2",
+        "a.data.level1",
+        "a.data",
+        "a",
       ]);
 
       assertExactPaths(internals2.getDirtyPaths(), [
-        "b.info.level1.level2.level3.value", "b.info.level1.level2.level3",
-        "b.info.level1.level2", "b.info.level1", "b.info", "b",
+        "b.info.level1.level2.level3.value",
+        "b.info.level1.level2.level3",
+        "b.info.level1.level2",
+        "b.info.level1",
+        "b.info",
+        "b",
       ]);
 
       assertExactPaths(internals3.getDirtyPaths(), [
-        "c.ref.level1.level2.level3.value", "c.ref.level1.level2.level3",
-        "c.ref.level1.level2", "c.ref.level1", "c.ref", "c",
+        "c.ref.level1.level2.level3.value",
+        "c.ref.level1.level2.level3",
+        "c.ref.level1.level2",
+        "c.ref.level1",
+        "c.ref",
+        "c",
       ]);
     });
 
@@ -756,8 +821,11 @@ describe("createModel", () => {
 
       // items.0 and first should both be dirty
       assertExactPaths(internals.getDirtyPaths(), [
-        "items.0.id", "items.0", "items",
-        "first.id", "first",
+        "items.0.id",
+        "items.0",
+        "items",
+        "first.id",
+        "first",
       ]);
 
       internals.markClean();
@@ -767,8 +835,11 @@ describe("createModel", () => {
 
       // items.1 and second should both be dirty
       assertExactPaths(internals.getDirtyPaths(), [
-        "items.1.id", "items.1", "items",
-        "second.id", "second",
+        "items.1.id",
+        "items.1",
+        "items",
+        "second.id",
+        "second",
       ]);
     });
 
@@ -792,8 +863,16 @@ describe("createModel", () => {
       // Modify at deepest level
       (model.a as typeof shared).level1.level2.level3.value = 10;
       assertExactPaths(internals.getDirtyPaths(), [
-        "a.level1.level2.level3.value", "a.level1.level2.level3", "a.level1.level2", "a.level1", "a",
-        "b.level1.level2.level3.value", "b.level1.level2.level3", "b.level1.level2", "b.level1", "b",
+        "a.level1.level2.level3.value",
+        "a.level1.level2.level3",
+        "a.level1.level2",
+        "a.level1",
+        "a",
+        "b.level1.level2.level3.value",
+        "b.level1.level2.level3",
+        "b.level1.level2",
+        "b.level1",
+        "b",
       ]);
 
       internals.markClean();
@@ -801,18 +880,21 @@ describe("createModel", () => {
       // Modify at middle level (replace level3)
       (model.b as typeof shared).level1.level2.level3 = { value: 20 };
       assertExactPaths(internals.getDirtyPaths(), [
-        "a.level1.level2.level3", "a.level1.level2", "a.level1", "a",
-        "b.level1.level2.level3", "b.level1.level2", "b.level1", "b",
+        "a.level1.level2.level3",
+        "a.level1.level2",
+        "a.level1",
+        "a",
+        "b.level1.level2.level3",
+        "b.level1.level2",
+        "b.level1",
+        "b",
       ]);
 
       internals.markClean();
 
       // Modify at top level (replace level1)
       (model.a as typeof shared).level1 = { level2: { level3: { value: 30 } } };
-      assertExactPaths(internals.getDirtyPaths(), [
-        "a.level1", "a",
-        "b.level1", "b",
-      ]);
+      assertExactPaths(internals.getDirtyPaths(), ["a.level1", "a", "b.level1", "b"]);
     });
 
     it("should handle star pattern - one object referenced from many siblings", () => {
@@ -829,22 +911,36 @@ describe("createModel", () => {
       });
 
       const model = createModel(schema, {
-        n: center, s: center, e: center, w: center,
-        ne: center, nw: center, se: center, sw: center,
+        n: center,
+        s: center,
+        e: center,
+        w: center,
+        ne: center,
+        nw: center,
+        se: center,
+        sw: center,
       });
       const internals = getModelInternals(model);
 
       (model.n as { core: number }).core = 999;
 
       assertExactPaths(internals.getDirtyPaths(), [
-        "n.core", "n",
-        "s.core", "s",
-        "e.core", "e",
-        "w.core", "w",
-        "ne.core", "ne",
-        "nw.core", "nw",
-        "se.core", "se",
-        "sw.core", "sw",
+        "n.core",
+        "n",
+        "s.core",
+        "s",
+        "e.core",
+        "e",
+        "w.core",
+        "w",
+        "ne.core",
+        "ne",
+        "nw.core",
+        "nw",
+        "se.core",
+        "se",
+        "sw.core",
+        "sw",
       ]);
     });
 
@@ -868,8 +964,12 @@ describe("createModel", () => {
       (model.shallow as { val: number }).val = 42;
 
       assertExactPaths(internals.getDirtyPaths(), [
-        "shallow.val", "shallow",
-        "deep.nested.deeper.val", "deep.nested.deeper", "deep.nested", "deep",
+        "shallow.val",
+        "shallow",
+        "deep.nested.deeper.val",
+        "deep.nested.deeper",
+        "deep.nested",
+        "deep",
       ]);
     });
   });

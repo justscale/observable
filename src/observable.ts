@@ -1,5 +1,5 @@
-import { OBSERVABLE_META, type Observable, type ObservableInternals } from "./types.js";
 import { createTrackedProxy } from "./proxy.js";
+import { OBSERVABLE_META, type Observable, type ObservableInternals } from "./types.js";
 
 // Deep traverse to ensure all nested objects are proxied
 function deepTraverse(obj: unknown, visited = new WeakSet<object>()): void {
@@ -63,7 +63,7 @@ export function createObservable<T extends object>(data: T): Observable<T> {
  * Get the internals of an observable
  */
 export function getObservableInternals<T extends object>(
-  observable: Observable<T>
+  observable: Observable<T>,
 ): ObservableInternals {
   return observable[OBSERVABLE_META];
 }
@@ -72,9 +72,5 @@ export function getObservableInternals<T extends object>(
  * Check if a value is an observable
  */
 export function isObservable<T extends object>(value: unknown): value is Observable<T> {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    OBSERVABLE_META in value
-  );
+  return value !== null && typeof value === "object" && OBSERVABLE_META in value;
 }

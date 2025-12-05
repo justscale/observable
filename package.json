@@ -2,14 +2,31 @@
   "name": "@justscale/observable",
   "version": "0.1.0",
   "description": "Proxy-based observable system with dirty tracking for TypeScript",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/justscale/observable.git"
-  },
+  "keywords": [
+    "observable",
+    "reactive",
+    "proxy",
+    "dirty-tracking",
+    "change-tracking",
+    "watch",
+    "async-generator",
+    "async-iterator",
+    "for-await",
+    "zod",
+    "model",
+    "state",
+    "typescript"
+  ],
   "homepage": "https://github.com/justscale/observable#readme",
   "bugs": {
     "url": "https://github.com/justscale/observable/issues"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justscale/observable.git"
+  },
+  "author": "jaenster",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,18 +43,19 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "test": "tsx --test test/**/*.test.ts",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "prepublishOnly": "pnpm build"
   },
-  "keywords": ["observable", "reactive", "zod", "model"],
-  "author": "",
-  "license": "MIT",
-  "packageManager": "pnpm@10.6.3",
   "dependencies": {
-    "zod": "^3.24.0"
+    "zod": "^4.1.13"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.3.8",
     "@types/node": "^22.10.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
-  }
+  },
+  "packageManager": "pnpm@10.24.0"
 }

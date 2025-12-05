@@ -1,6 +1,6 @@
-import { z } from "zod";
+import type { z } from "zod";
+import { createTrackedProxy } from "./proxy.js";
 import { MODEL_INTERNALS, type Model, type ModelInternals } from "./types.js";
-import { createTrackedProxy, isTrackedProxy } from "./proxy.js";
 
 // Deep traverse to ensure all nested objects are proxied and parent refs registered
 function deepTraverse(obj: unknown, visited = new WeakSet<object>()): void {
@@ -60,7 +60,7 @@ function manualDeepClone<T>(obj: T, visited = new WeakMap<object, unknown>()): T
 
 export function createModel<S extends z.ZodTypeAny>(
   schema: S,
-  input?: z.input<S>
+  input?: z.input<S>,
 ): Model<z.output<S>> {
   type T = z.output<S>;
   // Parse with defaults
@@ -75,7 +75,7 @@ export function createModel<S extends z.ZodTypeAny>(
   // This registers all parent refs for shared objects
   deepTraverse(proxy);
 
-  const internals: ModelInternals<T> = {
+  const internals: ModelInternals<T, S> = {
     schema,
     dirty,
     original,
@@ -125,9 +125,5 @@ export function getModelInternals<T>(model: Model<T>): ModelInternals<T> {
 
 // Type guard
 export function isModel<T>(value: unknown): value is Model<T> {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    MODEL_INTERNALS in value
-  );
+  return value !== null && typeof value === "object" && MODEL_INTERNALS in value;
 }

@@ -1,4 +1,4 @@
-import { MODEL_INTERNALS, OBSERVABLE_META, type Model, type Observable } from "./types.js";
+import { MODEL_INTERNALS, type Model, OBSERVABLE_META, type Observable } from "./types.js";
 
 type WatchCallback = (paths: string[]) => void;
 
@@ -31,7 +31,7 @@ function registerWatcher(dirtySet: Set<string>, callback: WatchCallback): () => 
 
   // Return unsubscribe function
   return () => {
-    watchers!.delete(callback);
+    watchers?.delete(callback);
   };
 }
 
@@ -72,15 +72,15 @@ export type Watcher = AsyncGenerator<string[], void, unknown> & {
  */
 export function watch<T extends object>(
   target: Observable<T> | Model<T>,
-  callback: (paths: string[]) => void
+  callback: (paths: string[]) => void,
 ): WatchHandle;
 export function watch<T extends object>(
   target: Observable<T> | Model<T>,
-  options?: WatchAsyncIteratorOptions
+  options?: WatchAsyncIteratorOptions,
 ): Watcher;
 export function watch<T extends object>(
   target: Observable<T> | Model<T>,
-  callbackOrOptions?: ((paths: string[]) => void) | WatchAsyncIteratorOptions
+  callbackOrOptions?: ((paths: string[]) => void) | WatchAsyncIteratorOptions,
 ): WatchHandle | Watcher {
   // Callback mode
   if (typeof callbackOrOptions === "function") {

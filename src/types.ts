@@ -4,8 +4,8 @@ import type { z } from "zod";
 export const MODEL_INTERNALS = Symbol("model_internals");
 export const OBSERVABLE_META = Symbol("observable_meta");
 
-export interface ModelInternals<T> {
-  schema: z.ZodType<T>;
+export interface ModelInternals<T, S extends z.ZodTypeAny = z.ZodTypeAny> {
+  schema: S;
   dirty: Set<string>;
   original: T;
   markClean(): void;

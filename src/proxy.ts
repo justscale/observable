@@ -1,18 +1,28 @@
-import { MODEL_INTERNALS, OBSERVABLE_META, type ProxyMeta, type ParentRef } from "./types.js";
+import { MODEL_INTERNALS, OBSERVABLE_META, type ProxyMeta } from "./types.js";
 import { notifyWatchers } from "./watch.js";
 
 // Built-in objects with internal slots that break when methods are called with proxy as `this`
 // These require binding to the original target, not the proxy
 const BUILTIN_WITH_INTERNAL_SLOTS = new Set([
-  Map, Set, WeakMap, WeakSet,
+  Map,
+  Set,
+  WeakMap,
+  WeakSet,
   Date,
-  ArrayBuffer, SharedArrayBuffer,
+  ArrayBuffer,
+  SharedArrayBuffer,
   DataView,
-  Int8Array, Uint8Array, Uint8ClampedArray,
-  Int16Array, Uint16Array,
-  Int32Array, Uint32Array,
-  Float32Array, Float64Array,
-  BigInt64Array, BigUint64Array,
+  Int8Array,
+  Uint8Array,
+  Uint8ClampedArray,
+  Int16Array,
+  Uint16Array,
+  Int32Array,
+  Uint32Array,
+  Float32Array,
+  Float64Array,
+  BigInt64Array,
+  BigUint64Array,
   RegExp,
   Promise,
 ]);
@@ -30,24 +40,51 @@ const WEAKMAP_MUTATORS = new Set(["set", "delete"]);
 const SET_MUTATORS = new Set(["add", "delete", "clear"]);
 const WEAKSET_MUTATORS = new Set(["add", "delete"]);
 const DATE_MUTATORS = new Set([
-  "setDate", "setFullYear", "setHours", "setMilliseconds",
-  "setMinutes", "setMonth", "setSeconds", "setTime",
-  "setUTCDate", "setUTCFullYear", "setUTCHours", "setUTCMilliseconds",
-  "setUTCMinutes", "setUTCMonth", "setUTCSeconds", "setYear",
+  "setDate",
+  "setFullYear",
+  "setHours",
+  "setMilliseconds",
+  "setMinutes",
+  "setMonth",
+  "setSeconds",
+  "setTime",
+  "setUTCDate",
+  "setUTCFullYear",
+  "setUTCHours",
+  "setUTCMilliseconds",
+  "setUTCMinutes",
+  "setUTCMonth",
+  "setUTCSeconds",
+  "setYear",
 ]);
 const TYPED_ARRAY_MUTATORS = new Set(["fill", "set", "copyWithin", "sort", "reverse"]);
 const DATAVIEW_MUTATORS = new Set([
-  "setInt8", "setUint8", "setInt16", "setUint16",
-  "setInt32", "setUint32", "setFloat32", "setFloat64",
-  "setBigInt64", "setBigUint64",
+  "setInt8",
+  "setUint8",
+  "setInt16",
+  "setUint16",
+  "setInt32",
+  "setUint32",
+  "setFloat32",
+  "setFloat64",
+  "setBigInt64",
+  "setBigUint64",
 ]);
 
 function isTypedArray(obj: object): boolean {
-  return obj instanceof Int8Array || obj instanceof Uint8Array || obj instanceof Uint8ClampedArray ||
-    obj instanceof Int16Array || obj instanceof Uint16Array ||
-    obj instanceof Int32Array || obj instanceof Uint32Array ||
-    obj instanceof Float32Array || obj instanceof Float64Array ||
-    obj instanceof BigInt64Array || obj instanceof BigUint64Array;
+  return (
+    obj instanceof Int8Array ||
+    obj instanceof Uint8Array ||
+    obj instanceof Uint8ClampedArray ||
+    obj instanceof Int16Array ||
+    obj instanceof Uint16Array ||
+    obj instanceof Int32Array ||
+    obj instanceof Uint32Array ||
+    obj instanceof Float32Array ||
+    obj instanceof Float64Array ||
+    obj instanceof BigInt64Array ||
+    obj instanceof BigUint64Array
+  );
 }
 
 function isMutatingMethod(obj: object, prop: string | symbol): boolean {
@@ -224,7 +261,7 @@ export function createTrackedProxy(
   path: string[],
   dirtySet: Set<string>,
   parent?: ProxyMeta,
-  keyInParent?: string
+  keyInParent?: string,
 ): object {
   // Check cache first (handles circular refs and cross-model sharing)
   const cached = proxyCache.get(target);
@@ -281,7 +318,7 @@ export function createTrackedProxy(
         if (typeof value === "function") {
           // Wrap mutating methods to track dirty
           if (isMutatingMethod(obj, prop)) {
-            return function(this: unknown, ...args: unknown[]) {
+            return function (this: unknown, ...args: unknown[]) {
               const result = value.apply(obj, args);
               // Mark this built-in container and its parents as dirty
               markContainerDirty(meta);
@@ -326,7 +363,7 @@ export function createTrackedProxy(
           [...path, String(prop)],
           dirtySet,
           meta,
-          String(prop)
+          String(prop),
         );
         const childMeta = metaCache.get(childProxy);
         if (childMeta) {
@@ -338,7 +375,7 @@ export function createTrackedProxy(
       return value;
     },
 
-    set(obj, prop, value, receiver) {
+    set(obj, prop, value, _receiver) {
       const oldValue = Reflect.get(obj, prop, obj);
 
       // Check if setting the same proxy reference back (no change)
