@@ -69,5 +69,6 @@
     "Safari >= 14.1",
     "Edge >= 84"
   ],
+  "private": false,
   "packageManager": "pnpm@10.24.0"
 }
