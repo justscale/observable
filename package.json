@@ -1,0 +1,43 @@
+{
+  "name": "@justscale/observable",
+  "version": "0.1.0",
+  "description": "Proxy-based observable system with dirty tracking for TypeScript",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/justscale/observable.git"
+  },
+  "homepage": "https://github.com/justscale/observable#readme",
+  "bugs": {
+    "url": "https://github.com/justscale/observable/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "tsx --test test/**/*.test.ts",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": ["observable", "reactive", "zod", "model"],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.6.3",
+  "dependencies": {
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
