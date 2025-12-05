@@ -128,18 +128,37 @@ watcher2.unsubscribe();
 
 ### Shared References
 
+Two models can share the same data. Changes through either model mark both as dirty with their respective paths:
+
 ```typescript
-const shared = createObservable({ value: 1 });
+import { z } from "zod";
+import { createModel, getModelInternals, createObservable } from "@justscale/observable";
 
-const model1 = createModel(schema1, { foo: shared });
-const model2 = createModel(schema2, { bar: shared });
+// Shared data
+const sharedProfile = createObservable({ name: "Alice", score: 100 });
 
-// Modify through either path
-model1.foo.value = 99;
+// Two different models, different schemas, same shared data
+const schema1 = z.object({ user: z.any() });
+const schema2 = z.object({ player: z.any() });
 
-// Both track dirty with their respective paths
-getModelInternals(model1).getDirtyPaths(); // ["foo.value", "foo"]
-getModelInternals(model2).getDirtyPaths(); // ["bar.value", "bar"]
+const model1 = createModel(schema1, { user: sharedProfile });
+const model2 = createModel(schema2, { player: sharedProfile });
+
+// Modify through model1
+model1.user.score = 200;
+
+// Both models are dirty with their own paths
+getModelInternals(model1).getDirtyPaths(); // ["user.score", "user"]
+getModelInternals(model2).getDirtyPaths(); // ["player.score", "player"]
+
+// Both see the same value
+model1.user.score;   // 200
+model2.player.score; // 200
+
+// Clean model1, model2 stays dirty
+getModelInternals(model1).markClean();
+getModelInternals(model1).isDirty(); // false
+getModelInternals(model2).isDirty(); // true - independent dirty tracking
 ```
 
 ### Built-in Objects
