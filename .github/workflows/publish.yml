@@ -41,7 +41,7 @@ jobs:
       - run: pnpm test
 
       - name: Bump version
-        run: npm version ${{ inputs.version }} --no-git-tag-version
+        run: pnpm version ${{ inputs.version }} --no-git-tag-version
 
       - name: Get new version
         id: version
@@ -58,4 +58,4 @@ jobs:
           git push --tags
 
       - name: Publish to npm
-        run: npm publish --provenance --access public
+        run: pnpm publish --provenance --access public --no-git-checks
